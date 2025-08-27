@@ -32,15 +32,10 @@ def sort_devices_by_ip(_devices: list) -> list:
 
 def get_interfaces_neighbours(_device):
     match _device[3]:
-        case "ECI":
-            print(f'{_device} - THERE IS NO LLDP!!!')
         case "Cisco":
             return cisco.get_lldp_info(_device)
         case "Huawei":
             return huawei.get_lldp_info(_device)
-        case "Juniper":
-            pass
-            #return Juniper.get_interfaces_and_ips(_device)
         case _:
             print(f'{_device} - UNKNOWN DEVICE')
 
