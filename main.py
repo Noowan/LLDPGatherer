@@ -4,13 +4,15 @@
 # 3. Connect to all vendors and get all interfaces
 # 5. generate output
 # 6. Rewrite code for multithreading
+import random
 import time
 from threading import Thread
 
 import huawei
+import cisco
 
 DEVICES_FILENAME = 'hosts.env'
-MAXTHREADS = 1500
+MAXTHREADS = 200
 lldpneighbours = []
 
 def read_devices_file_to_list_of_tuples(_filename: str) -> list:
@@ -33,8 +35,7 @@ def get_interfaces_neighbours(_device):
         case "ECI":
             print(f'{_device} - THERE IS NO LLDP!!!')
         case "Cisco":
-            pass
-            #return Cisco.get_interfaces_and_ips(_device)
+            return cisco.get_lldp_info(_device)
         case "Huawei":
             return huawei.get_lldp_info(_device)
         case "Juniper":
@@ -53,41 +54,43 @@ def main_func(_device):
 
 if __name__ == '__main__':
     devices = read_devices_file_to_list_of_tuples(DEVICES_FILENAME)
-    for device in devices:
-        main_func(device)
-        # threads = []
-        # tries = int(len(devices) / MAXTHREADS)
-        # leastTries = len(devices) % MAXTHREADS
-        # START = 0
-        # FINISH = MAXTHREADS
-        #
-        # i = 1
-        # while i <= tries:
-        #     for j in range(START, FINISH):
-        #         threads.append(
-        #             Thread(target=main_func, args=(devices[j], ), name=f"{devices[j]}:Thread"))
-        #         print(f"Thread {j} created")
-        #     for thread in threads:
-        #         # print(f"start {thread.name}")
-        #         thread.start()
-        #         time.sleep(0.1)
-        #     for thread in threads:
-        #         thread.join()
-        #     threads.clear()
-        #     START = FINISH
-        #     i = i + 1
-        #     FINISH = FINISH + MAXTHREADS
-        # i = 1
-        # if tries == 0:
-        #     j = -1
-        # while i <= leastTries:
-        #     threads.append(
-        #         Thread(target=main_func, args=(devices[i+j], ), name=f"{devices[i+j]}:Thread"))
-        #     print(f"Thread {i + j} created")
-        #     i = i + 1
-        # for thread in threads:
-        #     # print(f"start {thread.name}")
-        #     thread.start()
-        # for thread in threads:
-        #     thread.join()
-        # threads.clear()
+    random.shuffle(devices)
+    #for device in devices:
+        #main_func(device)
+    threads = []
+    tries = int(len(devices) / MAXTHREADS)
+    leastTries = len(devices) % MAXTHREADS
+    START = 0
+    FINISH = MAXTHREADS
+
+    i = 1
+    while i <= tries:
+        for j in range(START, FINISH):
+            threads.append(
+                Thread(target=main_func, args=(devices[j], ), name=f"{devices[j]}:Thread"))
+            print(f"Thread {j} created")
+        for thread in threads:
+            # print(f"start {thread.name}")
+            thread.start()
+            time.sleep(0.1)
+        for thread in threads:
+            thread.join()
+        threads.clear()
+        START = FINISH
+        i = i + 1
+        FINISH = FINISH + MAXTHREADS
+
+    i = 1
+    if tries == 0:
+        j = -1
+    while i <= leastTries:
+        threads.append(
+            Thread(target=main_func, args=(devices[i+j], ), name=f"{devices[i+j]}:Thread"))
+        print(f"Thread {i + j} created")
+        i = i + 1
+    for thread in threads:
+        # print(f"start {thread.name}")
+        thread.start()
+    for thread in threads:
+        thread.join()
+    threads.clear()

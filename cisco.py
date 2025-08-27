@@ -40,18 +40,31 @@ def get_lldp_info(_device):
         return
     try:
         print("Getting lldp info....")
-        shell.send("screen-length 0 temporary\n")
+        shell.send("terminal length 0\n")
         time.sleep(1)
-        shell.send(f"display lldp neighbor interface {_device[2]}\n")
+        islldpSuccessFlag = True
+        shell.send(f"show lldp neighbors {_device[2]} detail\n")
         time.sleep(5)
         output = shell.recv(102400).decode()
+        if output.find("LLDP is not enabled") != -1:
+            islldpSuccessFlag = False
+            shell.send(f"show cdp neighbors {_device[2]} detail\n")
+            time.sleep(5)
+            output = ""
+            output = shell.recv(102400).decode()
         shell.close()
     except Exception as e:
         print(e)
 
     try:
-        sysname = re.search("System name         :.+", output)[0].split(sep=':')
-        nbrportid = re.search("Port ID        :.+", output)[0].split(sep=':')
+        if islldpSuccessFlag:
+            sysname = re.search("System Name:.+", output)[0].split(sep=':')
+            nbrportid = re.search("Port id: .+", output)[0].split(sep=':')
+            sysname = sysname[1].replace("\r", "")
+            nbrportid = nbrportid[1].replace("\r", "")
+            return sysname, nbrportid
+        sysname = re.search("Device ID:.+", output)[0].split(sep=':')
+        nbrportid = re.search("Port ID \(outgoing port\): .+", output)[0].split(sep=':')
         sysname = sysname[1].replace("\r", "")
         nbrportid = nbrportid[1].replace("\r", "")
         return sysname, nbrportid
